@@ -2,18 +2,20 @@
 
 from setuptools import setup  # , find_packages
 
+from gstruct.__init__ import __version__, __author__, __author_email__
+
 setup(
     name='GStruct',
-    version='0.1.200203',
+    version=__version__,
     description=(
         '"GStruct" is a pythonic "struct" type framework similar to Golang struct, '
         'with self-created "interface" for it.'
     ),
     long_description=open('README.rst').read(),
-    author='DJun',
-    author_email='djunxp@gmail.com',
-    maintainer='DJun',
-    maintainer_email='djunxp@gmail.com',
+    author=__author__,
+    author_email=__author_email__,
+    maintainer=__author__,
+    maintainer_email=__author_email__,
     license='MIT License',
     # packages=find_packages(),
     packages=[
@@ -37,6 +39,5 @@ setup(
         'Topic :: Software Development :: Libraries',
     ],
     install_requires=[
-        'jsonpath-rw',
     ],
 )
