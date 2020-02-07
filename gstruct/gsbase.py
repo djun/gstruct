@@ -42,19 +42,20 @@ class GSBase:
     def __iter__(self):
         return iter(self._struct_methods.items())
 
-    def new(self, data, **options):
+    def new(self, data=None, **options):
         """ Make new object of type 'GStruct' from the defined GSBase object. """
         return GStruct(self, data, **options)
 
-    def def_method(self, method_name, **options):
+    def def_method(self, method_name=None, **options):
         """ A decorator that is used to register a struct method function for a
          given method name. """
 
         def decorator(f):
-            if method_name in self:
+            mn = method_name if method_name is not None else f.__name__
+            if mn in self:
                 raise ValueError("Duplicated GStruct method name!")
             # Map the method name to the real function and its options
-            self._struct_methods[method_name] = (f, options,)
+            self._struct_methods[mn] = (f, options,)
             return f
 
         return decorator
@@ -102,37 +103,18 @@ class GStruct:
     def gsbase(self):
         return self._gsbase
 
-    def __call__(self, *args, **kwargs):
-        """ Shortcut for type inference of GStruct """
-        dest_obj = args[0]
-        flag = False
-        if isinstance(dest_obj, GStruct):
-            flag = self.gsbase == dest_obj.gsbase
-        elif isinstance(dest_obj, GSBase):
-            gsbase = dest_obj
-            flag = self.gsbase == gsbase
-        elif isinstance(dest_obj, GSInterface):
-            gsinterface = dest_obj
-            flag = True
-            for i in gsinterface:
-                if i not in self.gsbase:
-                    flag = False
-                    break
-        return flag
-
-    def __copy__(self):
-        """ Lead copy() to deepcopy() """
-        return self.__deepcopy__()
-
-    def __deepcopy__(self, memodict=None):
-        if memodict is None:
-            memodict = {}
-        new_data = {}
+    @property
+    def data(self):
+        data_obj = {}
         for sk, sv in self._struct_data.items():
-            new_data[sk] = deepcopy(sv, memodict)
-        new_obj = self.__class__(self._gsbase, new_data)
-        memodict[id(new_obj)] = new_obj
-        return new_obj
+            if isinstance(sv, GStruct):
+                data_obj[sk] = sv.data
+            else:
+                data_obj[sk] = sv
+        return data_obj
+
+    def __iter__(self):
+        return iter(self.data.items())
 
     def __getattr__(self, item):
         """ Shortcut for get attribute value or method of this GStruct object """
@@ -150,8 +132,37 @@ class GStruct:
     def __len__(self):
         return len(self._struct_data)
 
-    def __iter__(self):
-        return iter(self._struct_data.items())
-
     def __contains__(self, item):
         return item in self._struct_data
+
+    def __copy__(self):
+        """ Lead copy() to deepcopy() """
+        return self.__deepcopy__()
+
+    def __deepcopy__(self, memodict=None):
+        if memodict is None:
+            memodict = {}
+        new_data = {}
+        for sk, sv in self._struct_data.items():
+            new_data[sk] = deepcopy(sv, memodict)
+        new_obj = self.__class__(self._gsbase, new_data)
+        memodict[id(new_obj)] = new_obj
+        return new_obj
+
+    def __call__(self, *args, **kwargs):
+        """ Shortcut for type inference of GStruct """
+        dest_obj = args[0]
+        flag = False
+        if isinstance(dest_obj, GStruct):
+            flag = self.gsbase == dest_obj.gsbase
+        elif isinstance(dest_obj, GSBase):
+            gsbase = dest_obj
+            flag = self.gsbase == gsbase
+        elif isinstance(dest_obj, GSInterface):
+            gsinterface = dest_obj
+            flag = True
+            for i in gsinterface:
+                if i not in self.gsbase:
+                    flag = False
+                    break
+        return flag
