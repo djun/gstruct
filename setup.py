@@ -24,7 +24,7 @@ setup(
     platforms=["all"],
     url='https://github.com/djun/gstruct',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
         'Operating System :: OS Independent',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
@@ -38,6 +38,5 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Topic :: Software Development :: Libraries',
     ],
-    install_requires=[
-    ],
+    install_requires=[],
 )

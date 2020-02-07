@@ -7,3 +7,7 @@ class GSInterface:
             interface_list = []
 
         self._interface_list = interface_list
+        self._gsref = None
+
+    def __iter__(self):
+        return iter(list(self._interface_list))
