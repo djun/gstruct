@@ -24,7 +24,7 @@ setup(
     platforms=["all"],
     url='https://github.com/djun/gstruct',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Operating System :: OS Independent',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',

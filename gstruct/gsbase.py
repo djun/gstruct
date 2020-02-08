@@ -53,7 +53,10 @@ class GSBase:
         def decorator(f):
             mn = method_name if method_name is not None else f.__name__
             if mn in self:
-                raise ValueError("Duplicated GStruct method name!")
+                obj = self._struct_methods[mn]
+                if isinstance(obj, tuple):
+                    # Allow override methods of sub GSBase, but not in the same GSBase
+                    raise ValueError("Duplicated method name in GSBase!")
             # Map the method name to the real function and its options
             self._struct_methods[mn] = (f, options,)
             return f
@@ -64,39 +67,48 @@ class GSBase:
         """ Make a method call function for the specific method name and
          GStruct object. """
         obj = self._struct_methods[method_name]
-        if obj is tuple:
+        if isinstance(obj, tuple):
             method_func, options = obj
             opt_ref = options.get(OPTION_REF, False)
             return partial(method_func, gs_obj if opt_ref else copy(gs_obj))
-        else:
+        elif isinstance(obj, str):
             data_key = obj
-            sub_gs_obj = gs_obj.__getattr__(data_key)
+            sub_gs_obj = getattr(gs_obj, data_key)
             sub_base = sub_gs_obj.gsbase
             return sub_base.make_method_call(method_name, sub_gs_obj)
+        else:
+            raise ValueError("Unexpected method name!")
 
 
 class GStruct:
+    """ This class can be regarded as 'the instance of GSBase',
+    and its real instance store the actual data in it. """
+
     def __init__(self, base, data, **options):
-        self._gsbase = base
+        self.__dict__['_gsbase'] = base
         if data is None:
             data = {}
 
-        self._struct_data = base.struct_definition
+        self.__dict__['_struct_data'] = base.struct_definition
         for sk, sv in self._struct_data.items():
             data_value = data.get(sk)
             if isinstance(sv, GSBase):
+                sub_gsbase = sv
                 if isinstance(data_value, GStruct):
                     # Accept GStruct object that its GSBase is same with the one in definition
-                    if self(data_value):
+                    if data_value(sub_gsbase):
                         self._struct_data[sk] = data_value
                     else:
                         raise ValueError("Unacceptable GStruct object of data key '{}'!".format(sk))
                 elif isinstance(data_value, dict) or data_value is None:
                     # Convert dict object to GStruct object
-                    self._struct_data[sk] = sv.new(data_value)
+                    self._struct_data[sk] = sub_gsbase.new(data_value)
                 else:
                     ValueError("Unexpected structure of data key '{}'!".format(sk))
             else:
+                data_value = data_value if data_value is not None else sv
+                if isinstance(data_value, GStruct):
+                    data_value = data_value.data
                 self._struct_data[sk] = data_value if data_value is not None else sv
 
     @property
@@ -123,11 +135,14 @@ class GStruct:
         elif item in self._gsbase:
             return self._gsbase.make_method_call(item, self)
         else:
-            return None
+            raise AttributeError("Has no data key or method name '{}'!".format(item))
 
     def __setattr__(self, key, value):
         """ Shortcut for set attribute value of this GStruct object (NOT for GStruct method) """
-        self._struct_data[key] = value
+        if key in self._struct_data:
+            self._struct_data[key] = value
+        else:
+            raise KeyError("Data key not found!")
 
     def __len__(self):
         return len(self._struct_data)
@@ -160,9 +175,5 @@ class GStruct:
             flag = self.gsbase == gsbase
         elif isinstance(dest_obj, GSInterface):
             gsinterface = dest_obj
-            flag = True
-            for i in gsinterface:
-                if i not in self.gsbase:
-                    flag = False
-                    break
+            flag = gsinterface.match(self.gsbase)
         return flag
