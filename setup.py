@@ -8,7 +8,7 @@ setup(
     name='GStruct',
     version=__version__,
     description=(
-        '"GStruct" is a pythonic "struct" type framework similar to Golang struct, '
+        'GStruct is a pythonic "struct" type framework similar to Golang struct, '
         'with self-created "interface" for it.'
     ),
     long_description=open('README.rst').read(),

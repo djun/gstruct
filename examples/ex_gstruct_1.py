@@ -33,6 +33,12 @@ BadStudent = GSBase({
 })
 
 
+# BadStudent = Student + {
+#     "bad_score": 0,
+# }
+# print("BadStudent.struct_definition_: {}".format(BadStudent.struct_definition_))
+
+
 @BadStudent.def_method()
 def show_score(bad_student):
     print("My name is {}, and my score is always {}!".format(bad_student.Student.User.name, bad_student.bad_score))
@@ -62,14 +68,14 @@ if __name__ == "__main__":
     print("\nu:")
     u = User.new()
     u.greet()
-    print(u.data)
+    print(u.data_)
     print()
 
     print("\ns:")
     s = Student.new()
     s.greet()
     s.show_score()
-    print(s.data)
+    print(s.data_)
 
     print("\ns1:")
     u1 = User.new({
@@ -85,40 +91,41 @@ if __name__ == "__main__":
         si = IGreet.wrap(s1)
         si.greet()
     s1.show_score()
-    print(s1.data)
+    print(s1.data_)
 
     print("\ns2:")
     s2 = BadStudent.new({
         "Student": s1,
     })
+    print(s2.data_)
     s2.show_score()
     s2.Student.User.name = "Xiao Hong"
     s2.Student.User.sex = "female"
     s2.Student.User.age = 11
-    print(s2.data)
-    print(s1.data)  # over written!
+    print(s2.data_)
+    print(s1.data_)  # over written!
 
     print("\nt1:")
-    t1 = Teacher.new({
+    t1 = Teacher * {
         "User": {
             "name": "Xiao Hua",
             "sex": "female",
             "age": 30,
         },
         "subject": "Math",
-    })
-    ti = IGreet.wrap(t1)
+    }  # same as Teacher.new({ ... })
+    ti = IGreet * t1  # same as IGreet.wrap(t1)
     ti.greet()
     # ti.teach(s1)  # raise error!
     t1.teach(s1)
-    print(t1.data)
+    print(t1.data_)
     print()
 
     print("\nt2:")
-    t2 = Teacher.new(t1.data)  # data has been copied!
+    t2 = Teacher.new(t1.data_)  # data has been copied!
     t2.User.name = "Xiao Hei"
-    print(t2.data)
-    print(t1.data)  # not over written!
+    print(t2.data_)
+    print(t1.data_)  # not over written!
     print()
 
     print("\nt3:")
@@ -127,5 +134,5 @@ if __name__ == "__main__":
             "not_exists": -1,  # auto ignore!
         }
     })
-    print(t3.data)
+    print(t3.data_)
     print()

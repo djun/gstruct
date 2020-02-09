@@ -16,30 +16,34 @@ class GSInterface:
         if not isinstance(interfaces, set):
             raise ValueError("Interface cannot be type {}!".format(type(interfaces)))
 
-        self._interfaces = interfaces
-        self._cached_struct_set = set()
+        self.__dict__['__interfaces'] = interfaces
+        self.__dict__['__cached_struct_set'] = set()
 
     @property
-    def interfaces(self):
-        return set(self._interfaces)
+    def interfaces_(self):
+        return set(self.__dict__['__interfaces'])
 
     def __iter__(self):
-        return iter(set(self.interfaces))
+        return iter(set(self.interfaces_))
+
+    def __mul__(self, other):
+        """ Shortcut for self.wrap(gs_obj) """
+        return self.wrap(other)
 
     def match(self, gsbase):
         if not gsbase.__class__.__name__ == "GSBase":
             raise ValueError("Can only accept object type 'GSBase'!")
 
-        if id(gsbase) in self._cached_struct_set:
+        if id(gsbase) in self.__dict__['__cached_struct_set']:
             flag = True
         else:
             flag = True
-            for i in self._interfaces:
+            for i in self.__dict__['__interfaces']:
                 if i not in gsbase:
                     flag = False
                     break
             if flag:
-                self._cached_struct_set.add(id(gsbase))
+                self.__dict__['__cached_struct_set'].add(id(gsbase))
 
         return flag
 
@@ -56,14 +60,14 @@ class GSIWrapper:
         if not gs_obj.__class__.__name__ == "GStruct":
             raise ValueError("'gs_obj' can only accept object type 'GStruct'!")
 
-        if gsi_object.match(gs_obj.gsbase):
-            self.__dict__['_wrapped_obj'] = gs_obj
-            self.__dict__['_interfaces'] = gsi_object.interfaces
+        if gsi_object.match(gs_obj.gsbase_):
+            self.__dict__['__wrapped_obj'] = gs_obj
+            self.__dict__['__interfaces'] = gsi_object.interfaces_
         else:
             raise ValueError("Cannot wrap a GStruct object not matched as a GSIWrapper!")
 
     def __getattr__(self, item):
-        if item in self._interfaces:
-            return getattr(self._wrapped_obj, item)
+        if item in self.__dict__['__interfaces']:
+            return getattr(self.__dict__['__wrapped_obj'], item)
         else:
             raise AttributeError("Has no interface '{}'!".format(item))
